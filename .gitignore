@@ -1,0 +1,115 @@
+```
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.*
+
+# Logs
+*.log
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# Build outputs
+dist/
+build/
+target/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+env/
+.ENV
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Testing
+.mypy_cache/
+.pytest_cache/
+.hypothesis/
+
+# Node.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary folders
+temp/
+tmp/
+
+# Compiled binary addons
+*.node
+
+# Local development settings
+.settings/
+
+# Rust/Cargo (if applicable)
+Cargo.lock
+target/
+
+# Go (if applicable)
+*.out
+go.sum
+
+# Java/Maven (if applicable)
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+target/
+
+# Gradle
+.gradle/
+build/
+
+# C/C++
+*.o
+*.a
+*.so
+*.dll
+*.exe
+
+# Compressed archives
+*.zip
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.gz
+*.rar
+*.7z
+
+# Database
+*.db
+*.db-journal
+
+# Sensitive/Local config
+config/local.*
+!config/local.example.*
+
+```
