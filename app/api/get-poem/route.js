@@ -1,19 +1,9 @@
 import { NextResponse } from 'next/server';
-import { load } from 'tesseract.js';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { createWorker } = require('tesseract.js');
 import cheerio from 'cheerio';
 import { neon } from '@neondatabase/serverless';
-
-// Initialize Tesseract worker
-let tesseractWorker = null;
-
-async function getTesseractWorker() {
-  if (!tesseractWorker) {
-    tesseractWorker = await load({
-      logger: m => console.log(m),
-    });
-  }
-  return tesseractWorker;
-}
 
 // Function to scrape poems from a website
 async function scrapePoemsFromWebsite(websiteUrl, poetName) {
@@ -50,8 +40,13 @@ async function scrapePoemsFromWebsite(websiteUrl, poetName) {
 // Function to extract text from image using OCR
 async function extractTextFromImage(imageUrl) {
   try {
-    const worker = await getTesseractWorker();
+    const worker = await createWorker({
+      logger: m => console.log(m),
+    });
+    await worker.loadLanguage('ara'); // Arabic language model also works for Urdu
+    await worker.initialize('ara');
     const { data: { text } } = await worker.recognize(imageUrl);
+    await worker.terminate();
     return text;
   } catch (error) {
     console.error(`Error extracting text from image: ${error.message}`);
@@ -68,16 +63,34 @@ export async function POST(request) {
     }
 
     // Initialize database connection
-    const sql = neon(process.env.DATABASE_URL || '');
+    if (!process.env.DATABASE_URL) {
+      console.error('DATABASE_URL is not set');
+      return NextResponse.json({ error: 'Database configuration error' }, { status: 500 });
+    }
+    
+    const sql = neon(process.env.DATABASE_URL);
 
     // First, check if we already have poems stored for this poet
     let existingPoems = [];
     try {
+      await sql`CREATE TABLE IF NOT EXISTS poems (
+        id SERIAL PRIMARY KEY,
+        poet_name VARCHAR(255) NOT NULL,
+        poem TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );`;
+      
       const result = await sql`SELECT poem FROM poems WHERE poet_name = ${poetName};`;
       existingPoems = result.rows.map(row => row.poem);
     } catch (error) {
-      // Table might not exist yet, that's okay
-      console.log('Database table may not exist yet:', error.message);
+      // Table creation might fail if already exists, that's okay
+      console.log('Database operation error:', error.message);
+      try {
+        const result = await sql`SELECT poem FROM poems WHERE poet_name = ${poetName};`;
+        existingPoems = result.rows.map(row => row.poem);
+      } catch (selectError) {
+        console.log('Select error:', selectError.message);
+      }
     }
 
     // Get poems from the website
@@ -99,13 +112,6 @@ export async function POST(request) {
       
       // Store the poem in the database
       try {
-        await sql`CREATE TABLE IF NOT EXISTS poems (
-          id SERIAL PRIMARY KEY,
-          poet_name VARCHAR(255) NOT NULL,
-          poem TEXT NOT NULL,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );`;
-        
         await sql`INSERT INTO poems (poet_name, poem) VALUES (${poetName}, ${selectedPoem});`;
       } catch (dbError) {
         console.error('Error storing poem in database:', dbError.message);
