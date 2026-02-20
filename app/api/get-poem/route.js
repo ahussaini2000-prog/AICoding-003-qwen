@@ -1,7 +1,7 @@
-import { sql } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
 import { load } from 'tesseract.js';
 import cheerio from 'cheerio';
+import { neon } from '@neondatabase/serverless';
 
 // Initialize Tesseract worker
 let tesseractWorker = null;
@@ -66,6 +66,9 @@ export async function POST(request) {
     if (!poetName || !websiteUrl) {
       return NextResponse.json({ error: 'Poet name and website URL are required' }, { status: 400 });
     }
+
+    // Initialize database connection
+    const sql = neon(process.env.DATABASE_URL || '');
 
     // First, check if we already have poems stored for this poet
     let existingPoems = [];
